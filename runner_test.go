@@ -58,10 +58,60 @@ func TestTreeRunner_Integration(t *testing.T) {
 	}
 	defer func() { _ = os.Chdir(oldWd) }() // возвращаем wd обратно после теста
 
+	var dirSize int64
+	if fi, err := os.Stat(filepath.Join(tmpRoot, "docs")); err == nil {
+		dirSize = fi.Size()
+	}
+
+	var sizeSortedContent []string
+	var reverseSizeSortedContent []string
+
+	if dirSize > 50 {
+		// Сценарий для Linux/Unix (папка docs (~4096 байт) тяжелее файла root_file.txt (50 байт))
+		sizeSortedContent = []string{
+			".",
+			"├── docs",
+			"│   ├── text2.txt", // 100 байт
+			"│   └── text1.txt", // 10 байт
+			"└── root_file.txt", // 50 байт
+			"",
+			"1 directories, 3 files",
+		}
+		reverseSizeSortedContent = []string{
+			".",
+			"├── root_file.txt",
+			"└── docs",
+			"    ├── text1.txt",
+			"    └── text2.txt",
+			"",
+			"1 directories, 3 files",
+		}
+	} else {
+		// Сценарий для Windows (папка docs (0 байт) легче файла root_file.txt (50 байт))
+		sizeSortedContent = []string{
+			".",
+			"├── root_file.txt", // 50 байт
+			"└── docs",          // 0 байт
+			"    ├── text2.txt", // 100 байт
+			"    └── text1.txt", // 10 байт
+			"",
+			"1 directories, 3 files",
+		}
+		reverseSizeSortedContent = []string{
+			".",
+			"├── docs",
+			"│   ├── text1.txt",
+			"│   └── text2.txt",
+			"└── root_file.txt",
+			"",
+			"1 directories, 3 files",
+		}
+	}
+
 	tests := []struct {
 		name     string
 		args     Args
-		expected []string // Ожидаемые строки в выводе (по порядку)
+		expected []string
 	}{
 		{
 			name: "Default behavior (Alphabetical, no hidden)",
@@ -125,37 +175,14 @@ func TestTreeRunner_Integration(t *testing.T) {
 			},
 		},
 		{
-			name: "Sort by size (-S)",
-			args: Args{
-				Dirs:     []string{"."},
-				SizeSort: true,
-			},
-			expected: []string{
-				".",
-				"├── root_file.txt", // 50 bytes
-				"└── docs",
-				"    ├── text2.txt", // 100 bytes
-				"    └── text1.txt", // 10 bytes
-				"",
-				"1 directories, 3 files",
-			},
+			name:     "Sort by size (-S)",
+			args:     Args{Dirs: []string{"."}, SizeSort: true},
+			expected: sizeSortedContent,
 		},
 		{
-			name: "Sort by size and reverse (-S -r)",
-			args: Args{
-				Dirs:     []string{"."},
-				SizeSort: true,
-				Reverse:  true,
-			},
-			expected: []string{
-				".",
-				"├── docs",
-				"│   ├── text1.txt",
-				"│   └── text2.txt",
-				"└── root_file.txt",
-				"",
-				"1 directories, 3 files",
-			},
+			name:     "Sort by size and reverse (-S -r)",
+			args:     Args{Dirs: []string{"."}, SizeSort: true, Reverse: true},
+			expected: reverseSizeSortedContent,
 		},
 	}
 
