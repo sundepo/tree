@@ -15,6 +15,7 @@ type Args struct {
 	// sorting options
 	Reverse  bool `short:"r" help:"Reverse the order of the sort."`
 	SizeSort bool `short:"S" help:"Sort files by size."`
+	TimeSort bool `short:"t" help:"Sort files by last modification time."`
 }
 
 func (a *Args) AfterApply() error {
