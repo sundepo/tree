@@ -14,8 +14,8 @@ type Args struct {
 	Level   int  `short:"L" default:"0" help:"Descend only level directories deep."`
 	// sorting options
 	Reverse  bool `short:"r" help:"Reverse the order of the sort."`
-	SizeSort bool `short:"S" help:"Sort files by size."`
-	TimeSort bool `short:"t" help:"Sort files by last modification time."`
+	SizeSort bool `short:"S" xor:"sort" help:"Sort files by size."`
+	TimeSort bool `short:"t" xor:"sort" help:"Sort files by last modification time."`
 }
 
 func (a *Args) AfterApply() error {
