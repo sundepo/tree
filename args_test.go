@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/alecthomas/kong"
 )
 
 func TestArgs_AfterApply(t *testing.T) {
@@ -83,6 +85,60 @@ func TestArgs_AfterApply(t *testing.T) {
 
 			if !tt.expectError && tt.verify != nil {
 				tt.verify(t, args)
+			}
+		})
+	}
+}
+
+func TestArgs_MutuallyExclusiveFlags(t *testing.T) {
+	tests := []struct {
+		name        string
+		cliArgs     []string
+		expectError bool
+	}{
+		{
+			name:        "Only size sort (-S)",
+			cliArgs:     []string{"-S"},
+			expectError: false,
+		},
+		{
+			name:        "Only time sort (-t)",
+			cliArgs:     []string{"-t"},
+			expectError: false,
+		},
+		{
+			name:        "Size sort with reverse (-S -r)",
+			cliArgs:     []string{"-S", "-r"},
+			expectError: false,
+		},
+		{
+			name:        "Time sort with reverse (-t -r)",
+			cliArgs:     []string{"-t", "-r"},
+			expectError: false,
+		},
+		{
+			name:        "Conflict: size sort and time sort together (-S -t)",
+			cliArgs:     []string{"-S", "-t"},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var args Args
+
+			parser, err := kong.New(&args,
+				kong.Name("tree"),
+				kong.Exit(func(int) {}),
+			)
+			if err != nil {
+				t.Fatalf("failed to initialize kong parser: %v", err)
+			}
+
+			_, err = parser.Parse(tt.cliArgs)
+
+			if (err != nil) != tt.expectError {
+				t.Errorf("Parse(%v) error = %v, expectError = %v", tt.cliArgs, err, tt.expectError)
 			}
 		})
 	}
