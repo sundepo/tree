@@ -4,6 +4,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 )
 
 // EntrySorter определяет интерфейс для сортировки элементов дерева.
@@ -49,6 +50,33 @@ func (s SizeSorter) Sort(entries []os.DirEntry) []os.DirEntry {
 	return entries
 }
 
+type TimeSorter struct{}
+
+func (s TimeSorter) Sort(entries []os.DirEntry) []os.DirEntry {
+	slices.SortFunc(entries, func(a, b os.DirEntry) int {
+		infoA, errA := a.Info()
+		infoB, errB := b.Info()
+
+		var timeA, timeB time.Time
+		if errA == nil {
+			timeA = infoA.ModTime()
+		}
+		if errB == nil {
+			timeB = infoB.ModTime()
+		}
+
+		if !timeA.Equal(timeB) {
+			if timeA.After(timeB) {
+				return -1
+			}
+			return 1
+		}
+
+		return strings.Compare(a.Name(), b.Name())
+	})
+	return entries
+}
+
 // ReverseSorter - декоратор, который разворачивает результат работы другого сортера.
 type ReverseSorter struct {
 	base EntrySorter
@@ -68,6 +96,8 @@ func NewEntrySorter(args Args) EntrySorter {
 	switch {
 	case args.SizeSort:
 		sorter = SizeSorter{}
+	case args.TimeSort:
+		sorter = TimeSorter{}
 	default:
 		sorter = AlphabeticalSorter{}
 	}
