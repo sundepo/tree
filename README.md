@@ -43,10 +43,14 @@ Arguments:
 
 ```text
 Flags:
-  -h, --help         Show context-sensitive help.
-  -a, --all          All files are listed.
-  -d, --dir-only     List directories only.
-  -L, --level=0      Descend only level directories deep.
+  -h, --help    Show context-sensitive help.
+
+Listing options:
+  -a, --all         All files are listed.
+  -d, --dir-only    List directories only.
+  -L, --level=0     Descend only level directories deep.
+
+Sorting options:
   -r, --reverse      Reverse the order of the sort.
   -S, --size-sort    Sort files by size.
   -t, --time-sort    Sort files by last modification time.

@@ -8,14 +8,16 @@ import (
 
 type Args struct {
 	Dirs []string `arg:"" optional:"" name:"dir" help:"Directory list."`
+
 	// listing options
-	All     bool `short:"a" help:"All files are listed."`
-	DirOnly bool `short:"d" help:"List directories only."`
-	Level   int  `short:"L" default:"0" help:"Descend only level directories deep."`
+	All     bool `short:"a" group:"Listing options:" help:"All files are listed."`
+	DirOnly bool `short:"d" group:"Listing options:" help:"List directories only."`
+	Level   int  `short:"L" default:"0" group:"Listing options:" help:"Descend only level directories deep."`
+
 	// sorting options
-	Reverse  bool `short:"r" help:"Reverse the order of the sort."`
-	SizeSort bool `short:"S" xor:"sort" help:"Sort files by size."`
-	TimeSort bool `short:"t" xor:"sort" help:"Sort files by last modification time."`
+	Reverse  bool `short:"r" group:"Sorting options:" help:"Reverse the order of the sort."`
+	SizeSort bool `short:"S" xor:"sort" group:"Sorting options:" help:"Sort files by size."`
+	TimeSort bool `short:"t" xor:"sort" group:"Sorting options:" help:"Sort files by last modification time."`
 }
 
 func (a *Args) AfterApply() error {
