@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/fatih/color"
 )
@@ -35,18 +36,28 @@ func TestTreeRunner_Integration(t *testing.T) {
 		}
 	}
 
-	createFile := func(path string, size int) {
+	baseTime := time.Now()
+
+	createFile := func(path string, size int, modTime time.Time) {
 		data := make([]byte, size)
 		if err := os.WriteFile(path, data, 0644); err != nil {
 			t.Fatalf("failed to create file %s: %v", path, err)
 		}
+		if err := os.Chtimes(path, modTime, modTime); err != nil {
+			t.Fatalf("failed to set chtimes for %s: %v", path, err)
+		}
 	}
 
-	createFile(filepath.Join(tmpRoot, ".hidden_dir", "file_in_hidden.txt"), 10)
-	createFile(filepath.Join(tmpRoot, "docs", "text1.txt"), 10)
-	createFile(filepath.Join(tmpRoot, "docs", "text2.txt"), 100)
-	createFile(filepath.Join(tmpRoot, ".hidden_file.txt"), 5)
-	createFile(filepath.Join(tmpRoot, "root_file.txt"), 50)
+	createFile(filepath.Join(tmpRoot, ".hidden_dir", "file_in_hidden.txt"), 10, baseTime)
+	createFile(filepath.Join(tmpRoot, "docs", "text1.txt"), 10, baseTime.Add(-3*time.Hour))
+	createFile(filepath.Join(tmpRoot, "docs", "text2.txt"), 100, baseTime)
+	createFile(filepath.Join(tmpRoot, ".hidden_file.txt"), 5, baseTime)
+	createFile(filepath.Join(tmpRoot, "root_file.txt"), 50, baseTime.Add(-2*time.Hour))
+
+	docsTime := baseTime.Add(-1 * time.Hour)
+	if err := os.Chtimes(filepath.Join(tmpRoot, "docs"), docsTime, docsTime); err != nil {
+		t.Fatalf("failed to set chtimes for docs: %v", err)
+	}
 
 	// меняем рабочую директорию на временную, чтобы в выводе были относительные или базовые пути
 	oldWd, err := os.Getwd()
@@ -183,6 +194,39 @@ func TestTreeRunner_Integration(t *testing.T) {
 			name:     "Sort by size and reverse (-S -r)",
 			args:     Args{Dirs: []string{"."}, SizeSort: true, Reverse: true},
 			expected: reverseSizeSortedContent,
+		},
+		{
+			name: "Sort by modification time (-t)",
+			args: Args{
+				Dirs:     []string{"."},
+				TimeSort: true,
+			},
+			expected: []string{
+				".",
+				"├── docs",
+				"│   ├── text2.txt",
+				"│   └── text1.txt",
+				"└── root_file.txt",
+				"",
+				"1 directories, 3 files",
+			},
+		},
+		{
+			name: "Sort by modification time and reverse (-t -r)",
+			args: Args{
+				Dirs:     []string{"."},
+				TimeSort: true,
+				Reverse:  true,
+			},
+			expected: []string{
+				".",
+				"├── root_file.txt",
+				"└── docs",
+				"    ├── text1.txt",
+				"    └── text2.txt",
+				"",
+				"1 directories, 3 files",
+			},
 		},
 	}
 
