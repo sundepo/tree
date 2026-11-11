@@ -144,3 +144,91 @@ func TestChainFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestPatternFilter(t *testing.T) {
+	tests := []struct {
+		name     string
+		pattern  string
+		entry    os.DirEntry
+		expected bool
+	}{
+		{
+			name:     "Empty pattern allows everything",
+			pattern:  "",
+			entry:    mockDirEntry{name: "main.go", isDir: false},
+			expected: true,
+		},
+		{
+			name:     "Matching file passes",
+			pattern:  "*.go",
+			entry:    mockDirEntry{name: "main.go", isDir: false},
+			expected: true,
+		},
+		{
+			name:     "Non-matching file is blocked",
+			pattern:  "*.go",
+			entry:    mockDirEntry{name: "README.md", isDir: false},
+			expected: false,
+		},
+		{
+			name:     "Directory always passes pattern filter",
+			pattern:  "*.go",
+			entry:    mockDirEntry{name: "docs", isDir: true},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filter := PatternFilter{pattern: tt.pattern}
+			if result := filter.Match(tt.entry); result != tt.expected {
+				t.Errorf("PatternFilter(pattern=%q).Match(%s, isDir=%v) = %v; want %v",
+					tt.pattern, tt.entry.Name(), tt.entry.IsDir(), result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestIgnoreFilter(t *testing.T) {
+	tests := []struct {
+		name     string
+		pattern  string
+		entry    os.DirEntry
+		expected bool
+	}{
+		{
+			name:     "Empty pattern allows everything",
+			pattern:  "",
+			entry:    mockDirEntry{name: "main.go", isDir: false},
+			expected: true,
+		},
+		{
+			name:     "Matching file is blocked",
+			pattern:  "*.tmp",
+			entry:    mockDirEntry{name: "cache.tmp", isDir: false},
+			expected: false,
+		},
+		{
+			name:     "Matching directory is blocked",
+			pattern:  "vendor",
+			entry:    mockDirEntry{name: "vendor", isDir: true},
+			expected: false,
+		},
+		{
+			name:     "Non-matching file passes",
+			pattern:  "*.tmp",
+			entry:    mockDirEntry{name: "main.go", isDir: false},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filter := IgnoreFilter{pattern: tt.pattern}
+			if result := filter.Match(tt.entry); result != tt.expected {
+				t.Errorf("IgnoreFilter(pattern=%q).Match(%s, isDir=%v) = %v; want %v",
+					tt.pattern, tt.entry.Name(), tt.entry.IsDir(), result, tt.expected)
+			}
+		})
+	}
+}

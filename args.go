@@ -10,9 +10,11 @@ type Args struct {
 	Dirs []string `arg:"" optional:"" name:"dir" help:"Directory list."`
 
 	// listing options
-	All     bool `short:"a" group:"Listing options:" help:"All files are listed."`
-	DirOnly bool `short:"d" group:"Listing options:" help:"List directories only."`
-	Level   int  `short:"L" default:"0" group:"Listing options:" help:"Descend only level directories deep."`
+	All           bool   `short:"a" group:"Listing options:" help:"All files are listed."`
+	DirOnly       bool   `short:"d" group:"Listing options:" help:"List directories only."`
+	Level         int    `short:"L" default:"0" group:"Listing options:" help:"Descend only level directories deep."`
+	Pattern       string `short:"P" group:"Listing options:" help:"List only those files that match the pattern given."`
+	IgnorePattern string `short:"I" group:"Listing options:" help:"Do not list files that match the given pattern."`
 
 	// sorting options
 	Reverse  bool `short:"r" group:"Sorting options:" help:"Reverse the order of the sort."`
@@ -43,6 +45,18 @@ func (a *Args) AfterApply() error {
 
 	if a.Level < 0 {
 		return fmt.Errorf("invalid level, must be greater than 0: %d", a.Level)
+	}
+
+	if a.Pattern != "" {
+		if _, err := filepath.Match(a.Pattern, ""); err != nil {
+			return fmt.Errorf("invalid pattern %q: %w", a.Pattern, err)
+		}
+	}
+
+	if a.IgnorePattern != "" {
+		if _, err := filepath.Match(a.IgnorePattern, ""); err != nil {
+			return fmt.Errorf("invalid ignore pattern %q: %w", a.IgnorePattern, err)
+		}
 	}
 
 	return nil
