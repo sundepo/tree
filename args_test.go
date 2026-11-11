@@ -71,6 +71,16 @@ func TestArgs_AfterApply(t *testing.T) {
 			inputArgs:   Args{Dirs: []string{validSubdir}, Level: -1},
 			expectError: true,
 		},
+		{
+			name:        "Invalid include pattern (-P) error",
+			inputArgs:   Args{Dirs: []string{validSubdir}, Pattern: "[invalid"},
+			expectError: true,
+		},
+		{
+			name:        "Invalid ignore pattern (-I) error",
+			inputArgs:   Args{Dirs: []string{validSubdir}, IgnorePattern: "[invalid"},
+			expectError: true,
+		},
 	}
 
 	for _, tt := range tests {
