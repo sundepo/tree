@@ -3,10 +3,27 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type EntryFilter interface {
 	Match(entry os.DirEntry) bool
+}
+
+type lowerCaseDirEntry struct {
+	os.DirEntry
+}
+
+func (e lowerCaseDirEntry) Name() string {
+	return strings.ToLower(e.DirEntry.Name())
+}
+
+type IgnoreCaseFilter struct {
+	base EntryFilter
+}
+
+func (f IgnoreCaseFilter) Match(entry os.DirEntry) bool {
+	return f.base.Match(lowerCaseDirEntry{DirEntry: entry})
 }
 
 type ChainFilter []EntryFilter
@@ -73,10 +90,26 @@ func (f IgnoreFilter) Match(entry os.DirEntry) bool {
 }
 
 func NewFilterChain(args Args) EntryFilter {
+	includePat := args.Pattern
+	ignorePat := args.IgnorePattern
+
+	if args.IgnoreCase {
+		includePat = strings.ToLower(includePat)
+		ignorePat = strings.ToLower(ignorePat)
+	}
+
+	var patternFilter EntryFilter = PatternFilter{pattern: includePat}
+	var ignoreFilter EntryFilter = IgnoreFilter{pattern: ignorePat}
+
+	if args.IgnoreCase {
+		patternFilter = IgnoreCaseFilter{base: patternFilter}
+		ignoreFilter = IgnoreCaseFilter{base: ignoreFilter}
+	}
+
 	return ChainFilter{
 		DirOnlyFilter{enabled: args.DirOnly},
 		HiddenFilter{showHidden: args.All},
-		PatternFilter{pattern: args.Pattern},
-		IgnoreFilter{pattern: args.IgnorePattern},
+		patternFilter,
+		ignoreFilter,
 	}
 }

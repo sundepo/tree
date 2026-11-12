@@ -145,6 +145,50 @@ func TestChainFilter(t *testing.T) {
 	}
 }
 
+func TestNewFilterChain(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     Args
+		entry    os.DirEntry
+		expected bool
+	}{
+		{
+			name:     "Case-sensitive pattern blocks uppercase extension",
+			args:     Args{All: true, Pattern: "*.MD", IgnoreCase: false},
+			entry:    mockDirEntry{name: "readme.md", isDir: false},
+			expected: false,
+		},
+		{
+			name:     "IgnoreCase allows uppercase pattern against lowercase file",
+			args:     Args{All: true, Pattern: "*.MD", IgnoreCase: true},
+			entry:    mockDirEntry{name: "readme.md", isDir: false},
+			expected: true,
+		},
+		{
+			name:     "Case-sensitive ignore allows different case",
+			args:     Args{All: true, IgnorePattern: "BUILD", IgnoreCase: false},
+			entry:    mockDirEntry{name: "build", isDir: true},
+			expected: true,
+		},
+		{
+			name:     "IgnoreCase blocks directory regardless of case",
+			args:     Args{All: true, IgnorePattern: "BUILD", IgnoreCase: true},
+			entry:    mockDirEntry{name: "build", isDir: true},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			chain := NewFilterChain(tt.args)
+			if result := chain.Match(tt.entry); result != tt.expected {
+				t.Errorf("NewFilterChain(%+v).Match(%s) = %v; want %v",
+					tt.args, tt.entry.Name(), result, tt.expected)
+			}
+		})
+	}
+}
+
 func TestPatternFilter(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -228,6 +272,38 @@ func TestIgnoreFilter(t *testing.T) {
 			if result := filter.Match(tt.entry); result != tt.expected {
 				t.Errorf("IgnoreFilter(pattern=%q).Match(%s, isDir=%v) = %v; want %v",
 					tt.pattern, tt.entry.Name(), tt.entry.IsDir(), result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestIgnoreCaseFilter(t *testing.T) {
+	tests := []struct {
+		name     string
+		base     EntryFilter
+		entry    os.DirEntry
+		expected bool
+	}{
+		{
+			name:     "Lowercases entry name for PatternFilter",
+			base:     PatternFilter{pattern: "*.md"},
+			entry:    mockDirEntry{name: "README.MD", isDir: false},
+			expected: true,
+		},
+		{
+			name:     "Lowercases entry name for IgnoreFilter",
+			base:     IgnoreFilter{pattern: "vendor"},
+			entry:    mockDirEntry{name: "VENDOR", isDir: true},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filter := IgnoreCaseFilter{base: tt.base}
+			if result := filter.Match(tt.entry); result != tt.expected {
+				t.Errorf("IgnoreCaseFilter.Match(%s) = %v; want %v",
+					tt.entry.Name(), result, tt.expected)
 			}
 		})
 	}

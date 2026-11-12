@@ -15,6 +15,7 @@ type Args struct {
 	Level         int    `short:"L" default:"0" group:"Listing options:" help:"Descend only level directories deep."`
 	Pattern       string `short:"P" group:"Listing options:" help:"List only those files that match the pattern given."`
 	IgnorePattern string `short:"I" group:"Listing options:" help:"Do not list files that match the given pattern."`
+	IgnoreCase    bool   `group:"Listing options:" help:"Ignore case when pattern matching."`
 
 	// sorting options
 	Reverse  bool `short:"r" group:"Sorting options:" help:"Reverse the order of the sort."`
