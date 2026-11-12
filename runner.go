@@ -22,13 +22,21 @@ type TreeRunner struct {
 }
 
 func NewTreeRunner(args Args, out io.Writer) *TreeRunner {
+	dirColor := color.New(color.FgBlue, color.Bold)
+	errColor := color.New(color.FgRed)
+
+	if args.Output != "" {
+		dirColor.DisableColor()
+		errColor.DisableColor()
+	}
+
 	return &TreeRunner{
 		args:     args,
 		out:      out,
 		filter:   NewFilterChain(args),
 		sorter:   NewEntrySorter(args),
-		dirColor: color.New(color.FgBlue, color.Bold),
-		errColor: color.New(color.FgRed),
+		dirColor: dirColor,
+		errColor: errColor,
 	}
 }
 

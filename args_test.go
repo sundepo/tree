@@ -153,3 +153,48 @@ func TestArgs_MutuallyExclusiveFlags(t *testing.T) {
 		})
 	}
 }
+
+func TestArgs_OutputFlag(t *testing.T) {
+	tests := []struct {
+		name     string
+		cliArgs  []string
+		expected string
+	}{
+		{
+			name:     "Default empty output",
+			cliArgs:  []string{},
+			expected: "",
+		},
+		{
+			name:     "Short flag (-o)",
+			cliArgs:  []string{"-o", "tree.txt"},
+			expected: "tree.txt",
+		},
+		{
+			name:     "Long flag (--output)",
+			cliArgs:  []string{"--output=result.txt"},
+			expected: "result.txt",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var args Args
+			parser, err := kong.New(&args,
+				kong.Name("tree"),
+				kong.Exit(func(int) {}),
+			)
+			if err != nil {
+				t.Fatalf("failed to initialize kong parser: %v", err)
+			}
+
+			if _, err := parser.Parse(tt.cliArgs); err != nil {
+				t.Fatalf("Parse(%v) unexpected error: %v", tt.cliArgs, err)
+			}
+
+			if args.Output != tt.expected {
+				t.Errorf("got Output = %q, want %q", args.Output, tt.expected)
+			}
+		})
+	}
+}
